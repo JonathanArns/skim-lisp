@@ -1,4 +1,4 @@
-use lispr::repl::repl;
+use skim::repl::repl;
 fn main() {
     repl();
 }
