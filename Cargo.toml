@@ -1,0 +1,15 @@
+[package]
+name = "lispr"
+version = "0.1.0"
+authors = ["JonathanArns <jonathan.arns@googlemail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "lispr"
+path = "src/lib.rs"
+
+[dependencies]
+regex = "*"
+rustyline = "6"
