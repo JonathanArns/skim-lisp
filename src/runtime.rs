@@ -79,8 +79,19 @@ fn apply_function(env: &mut Env, list: LispCell) -> Result<Exp, LispErr> {
                     if let Exp::Symbol(sym) = param {
                         if let Some(arg) = args_iter.next() {
                             scope.set(sym, arg);
+                        } else {
+                            return Err(LispErr::Reason(format!(
+                                "Function {} called with too few arguments",
+                                list.car
+                            )));
                         }
                     }
+                }
+                if let Some(_) = args_iter.next() {
+                    return Err(LispErr::Reason(format!(
+                        "Function {} called with too many arguments",
+                        list.car
+                    )));
                 }
                 scope
             } else {
