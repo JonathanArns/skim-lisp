@@ -32,8 +32,12 @@ pub type Primitive = fn(env: &mut Env, params: Exp) -> Result<Exp, LispErr>;
 #[derive(Clone)]
 pub enum Exp {
     Nil,
+    Boolean(bool),
     Number(f64),
+    Char(char),
     Symbol(String),
+    String(String),
+    Vector(Vec<Exp>),
     Pair(LispCell),
     Primitive(Primitive),
     Lambda(Lambda),
@@ -110,8 +114,8 @@ impl Exp {
     fn format(&self) -> String {
         match self {
             Exp::Nil => "()".to_string(),
-            Exp::Number(x) => x.to_string(),
-            Exp::Symbol(x) => x.to_string(),
+            Exp::Number(s) => s.to_string(),
+            Exp::Symbol(s) => s.to_string(),
             Exp::Primitive(_) => "primitive function".to_string(),
             Exp::Pair(x) => {
                 let mut s = String::from("(");
@@ -124,6 +128,18 @@ impl Exp {
                 s
             }
             Exp::Lambda(_) => "lambda function".to_string(),
+            Exp::Boolean(b) => if *b { "#t" } else { "#f" }.to_string(),
+            Exp::Char(c) => c.to_string(),
+            Exp::Vector(vec) => {
+                let mut str = String::from("[");
+                for exp in vec {
+                    str.push_str(&exp.format());
+                    str.push(' ');
+                }
+                str.push(']');
+                str
+            }
+            Exp::String(s) => s.to_string(),
         }
     }
 }

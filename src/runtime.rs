@@ -58,7 +58,14 @@ pub fn eval<'a>(env: &'a mut Env, exp: &Exp) -> Result<Exp, LispErr> {
             }
         }
         Exp::Symbol(s) => lookup_symbol(env, &s),
-        Exp::Nil | Exp::Number(_) | Exp::Lambda(_) | Exp::Primitive(_) => Ok(exp.clone()), // self evaluating
+        Exp::Nil
+        | Exp::Number(_)
+        | Exp::Lambda(_)
+        | Exp::Primitive(_)
+        | Exp::String(_)
+        | Exp::Char(_)
+        | Exp::Vector(_)
+        | Exp::Boolean(_) => Ok(exp.clone()), // self evaluating
     }
 }
 
