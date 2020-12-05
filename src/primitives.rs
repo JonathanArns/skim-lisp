@@ -91,3 +91,36 @@ pub fn prim_lambda(_: &mut Env, args: Exp) -> Result<Exp, LispErr> {
     }
     Err(LispErr::Reason("invalid lambda definition".to_string()))
 }
+
+pub fn prim_cond(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
+    let num_args_err = Err(LispErr::Reason("Expected exactly 3 arguments to (cond)".to_string()));
+    if let Exp::Pair(list) = args {
+        let mut iter = list.into_iter();
+        let condition = if let Some(cond) = iter.next() {
+            cond
+        } else {
+            return num_args_err;
+        };
+        let true_branch = if let Some(branch) = iter.next() {
+            branch
+        } else {
+            return num_args_err;
+        };
+        let false_branch = if let Some(branch) = iter.next() {
+            branch
+        } else {
+            return num_args_err;
+        };
+        if let Some(_) = iter.next() {
+            return num_args_err;
+        }
+
+        match eval(env, &condition)? {
+            Exp::Boolean(false) | Exp::Nil => eval(env, &false_branch),
+            _ => eval(env, &true_branch)
+        }
+
+    } else {
+        num_args_err
+    }
+}
