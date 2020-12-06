@@ -49,6 +49,7 @@ pub fn default_env() -> Env<'static> {
     env.set("car".to_string(), Exp::Primitive(prim_car));
     env.set("cdr".to_string(), Exp::Primitive(prim_cdr));
     env.set("cons".to_string(), Exp::Primitive(prim_cons));
+    env.set("list".to_string(), Exp::Primitive(prim_list));
     env
 }
 

@@ -176,3 +176,11 @@ pub fn prim_cons(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
         num_args_err
     }
 }
+
+pub fn prim_list(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
+    if let Exp::Pair(list) = args {
+        Ok(Exp::Pair(eval_list(env, list)?))
+    } else {
+        Ok(Exp::Nil)
+    }
+}
