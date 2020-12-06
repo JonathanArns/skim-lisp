@@ -71,6 +71,30 @@ impl LispCell {
             }
         }
     }
+    
+    fn format(&self) -> String {
+        let mut s = String::from("(");
+        s.push_str(&self.format_naked());
+        s.push(')');
+        s
+    }
+
+    fn format_naked(&self) -> String {
+        let x = self.clone();
+        let mut s = x.car.format();
+        match *x.cdr {
+            Exp::Pair(cdr) => {
+                s.push(' ');
+                s.push_str(&cdr.format_naked());
+            },
+            Exp::Nil => {}, // do nothing
+            _ => {
+                s.push_str(" . ");
+                s.push_str(&x.cdr.format());
+            }
+        }
+        s
+    }
 }
 
 pub struct ListIter {
@@ -117,16 +141,7 @@ impl Exp {
             Exp::Number(s) => s.to_string(),
             Exp::Symbol(s) => s.to_string(),
             Exp::Primitive(_) => "primitive function".to_string(),
-            Exp::Pair(x) => {
-                let mut s = String::from("(");
-                for exp in x.clone() {
-                    s.push_str(&exp.format());
-                    s.push(' ');
-                }
-                s.pop();
-                s.push(')');
-                s
-            }
+            Exp::Pair(x) => x.format(),
             Exp::Lambda(_) => "lambda function".to_string(),
             Exp::Boolean(b) => if *b { "#t" } else { "#f" }.to_string(),
             Exp::Char(c) => c.to_string(),
