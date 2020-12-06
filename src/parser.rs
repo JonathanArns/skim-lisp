@@ -49,19 +49,26 @@ fn parse_list<'a>(tokens: &'a [String]) -> Result<(Exp, &'a [String]), LispErr> 
 fn parse_atom(token: &str) -> Result<Exp, LispErr> {
     let s = token.to_string();
     let mut iter = s.chars();
-    let first = iter.next().ok_or(LispErr::Bug(format!("Could not read first char when parsing atom: {}", token)))?;
-    if let Ok(x) = token.parse() {  // float 64
+    let first = iter.next().ok_or(LispErr::Bug(format!(
+        "Could not read first char when parsing atom: {}",
+        token
+    )))?;
+    if let Ok(x) = token.parse() {
+        // float 64
         Ok(Exp::Number(x))
-    } else if first == '"' {  // string
+    } else if first == '"' {
+        // string
         let mut string = String::new();
         for c in iter {
             if c != '"' || string.ends_with("\"") {
                 string.push(c);
             } else {
-                return Ok(Exp::String(string))
+                return Ok(Exp::String(string));
             }
         }
-        Err(LispErr::UnexpectedToken("Expected \" to finish string literal".to_string()))
+        Err(LispErr::UnexpectedToken(
+            "Expected \" to finish string literal".to_string(),
+        ))
     } else {
         Ok(Exp::Symbol(token.to_string()))
     }

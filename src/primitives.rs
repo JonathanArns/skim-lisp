@@ -93,7 +93,9 @@ pub fn prim_lambda(_: &mut Env, args: Exp) -> Result<Exp, LispErr> {
 }
 
 pub fn prim_cond(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
-    let num_args_err = Err(LispErr::Reason("Expected exactly 3 arguments to (cond)".to_string()));
+    let num_args_err = Err(LispErr::Reason(
+        "Expected exactly 3 arguments to (cond)".to_string(),
+    ));
     if let Exp::Pair(list) = args {
         let mut iter = list.into_iter();
         let condition = if let Some(cond) = iter.next() {
@@ -117,9 +119,59 @@ pub fn prim_cond(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
 
         match eval(env, &condition)? {
             Exp::Boolean(false) | Exp::Nil => eval(env, &false_branch),
-            _ => eval(env, &true_branch)
+            _ => eval(env, &true_branch),
         }
+    } else {
+        num_args_err
+    }
+}
 
+pub fn prim_car(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
+    let arg_err = Err(LispErr::Reason("Expected exactly one argument of type list to (car)".to_string()));
+    if let Exp::Pair(LispCell {car, cdr}) = args {
+        if let (Exp::Pair(LispCell {car, ..}), Exp::Nil) = (eval(env, &*car)?, *cdr) {
+            Ok(*car)
+        } else {
+            arg_err
+        }
+    } else {
+        arg_err
+    }
+}
+
+pub fn prim_cdr(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
+    let arg_err = Err(LispErr::Reason("Expected exactly one argument of type list to (cdr)".to_string()));
+    if let Exp::Pair(LispCell {car, cdr}) = args {
+        if let (Exp::Pair(LispCell {cdr, ..}), Exp::Nil) = (eval(env, &*car)?, *cdr) {
+            Ok(*cdr)
+        } else {
+            arg_err
+        }
+    } else {
+        arg_err
+    }
+}
+
+pub fn prim_cons(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
+    let num_args_err = Err(LispErr::Reason(
+        "Expected exactly 2 arguments to (cons)".to_string(),
+    ));
+    if let Exp::Pair(list) = args {
+        let mut iter = eval_list(env, list)?.into_iter();
+        let car = if let Some(car) = iter.next() {
+            car
+        } else {
+            return num_args_err;
+        };
+        let cdr = if let Some(cdr) = iter.next() {
+            cdr
+        } else {
+            return num_args_err;
+        };
+        if let Some(_) = iter.next() {
+            return num_args_err;
+        }
+        Ok(Exp::Pair(cons(car, cdr)))
     } else {
         num_args_err
     }
