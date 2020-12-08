@@ -1,49 +1,28 @@
 use crate::ast::*;
 use crate::runtime::*;
 use std::rc::Rc;
+use crate::args;
 
 pub fn prim_plus(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
     let mut res = 0.0;
-    if let Exp::Pair(mut list) = args {
-        list = eval_list(env, list)?;
-        for item in list {
-            if let Exp::Number(x) = item {
-                res += x;
-            } else {
-                return Err(LispErr::Reason(
-                    "Expected number, got something else".to_string(),
-                ));
-            }
-        }
+    let list = args!(env, args, ""; (->..Exp::Number))?;
+    for x in list {
+        res += x;
     }
     Ok(Exp::Number(res))
 }
 
 pub fn prim_minus(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
-    let mut res = 0.0;
-    let mut arg0 = 0.0;
-    if let Exp::Pair(list) = args {
-        let mut list_iter = eval_list(env, list)?.into_iter();
-        if let Some(Exp::Number(n)) = list_iter.next() {
-            res = n;
-            arg0 = n;
-        }
-        for item in list_iter {
-            if let Exp::Number(x) = item {
-                res -= x;
-            } else {
-                return Err(LispErr::Reason(
-                    "Expected number, got something else".to_string(),
-                ));
-            }
-        }
-        if arg0 == res {
-            return Ok(Exp::Number(-res));
-        } else {
-            return Ok(Exp::Number(res));
-        }
+    let (arg0, rest) = args!(env, args, ""; (->Exp::Number) (->..Exp::Number))?;
+    let mut res = arg0;
+    for x in rest {
+        res -= x;
     }
-    Err(LispErr::Reason("Too few arguments".to_string()))
+    if arg0 == res {
+        Ok(Exp::Number(-res))
+    } else {
+        Ok(Exp::Number(res))
+    }
 }
 
 pub fn prim_define(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
@@ -97,25 +76,32 @@ pub fn prim_cond(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
         "Expected exactly 3 arguments to (cond)".to_string(),
     ));
     if let Exp::Pair(list) = args {
-        let mut iter = list.into_iter();
-        let condition = if let Some(cond) = iter.next() {
+        let mut clause_iter = list.into_iter();
+        let x = loop {
+            match clause_iter.next() {
+                Some(Exp::Pair(clause)) => {
+                    todo!()
+                },
+                None => break Ok(Exp::Nil),
+                _ => break Err(LispErr::Reason("(cond) only takes lists as arguments".to_string())),
+            }
+        };
+        ///////////////
+        let condition = if let Some(cond) = clause_iter.next() {
             cond
         } else {
             return num_args_err;
         };
-        let true_branch = if let Some(branch) = iter.next() {
+        let true_branch = if let Some(branch) = clause_iter.next() {
             branch
         } else {
             return num_args_err;
         };
-        let false_branch = if let Some(branch) = iter.next() {
+        let false_branch = if let Some(branch) = clause_iter.next() {
             branch
         } else {
             return num_args_err;
         };
-        if let Some(_) = iter.next() {
-            return num_args_err;
-        }
 
         match eval(env, &condition)? {
             Exp::Boolean(false) | Exp::Nil => eval(env, &false_branch),
@@ -183,4 +169,8 @@ pub fn prim_list(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
     } else {
         Ok(Exp::Nil)
     }
+}
+
+pub fn prim_quote(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
+    todo!()
 }
