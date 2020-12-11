@@ -1,10 +1,13 @@
 #[macro_export]
-macro_rules! args {
+macro_rules! destruct {
     // (@step($list:ident) ()) => {
     //     if let Exp::Nil = *$list.cdr {
             
     //     }
     // };
+    (@type_name Exp::Number) => { "number" };
+    (@type_name Exp::Boolean) => { "boolean" };
+    (@type_name Exp::Pair) => { "pair" };
     (@step($env:ident, $list:ident) (->Exp)) => { // ...(->Exp)...
         {
             $list = if let Exp::Pair(cdr) = *$list.cdr {
@@ -25,7 +28,7 @@ macro_rules! args {
             *$list.car
         }
     };
-    (@first($env:ident, $list:ident) (Exp)) => { // (->Exp)...
+    (@first($env:ident, $list:ident) (->Exp)) => { // (->Exp)...
         {
             eval($env, &*$list.car)?
         }
@@ -192,13 +195,13 @@ macro_rules! args {
     ($env:ident, $ex:expr, $err:literal; $first:tt $($arg:tt)*) => {
         if let Exp::Pair(mut list) = $ex {
             Ok((
-                args!(@first($env, list) $first)
+                destruct!(@first($env, list) $first)
                 $(
-                    ,args!(@step($env, list) $arg)
+                    ,destruct!(@step($env, list) $arg)
                 )*
             ))
         } else {
-            Err(LispErr::Reason("todo".to_string()))
+            Err(LispErr::Reason("primitive procedure did not receive a list as input".to_string()))
         }
     };
 }

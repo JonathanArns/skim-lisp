@@ -1,10 +1,10 @@
 use crate::ast::*;
 use regex::Regex;
 
-pub fn lex(expr: &str) -> Vec<String> {
+pub fn lex(code: &str) -> Vec<String> {
     Regex::new(r";.*?(\n|\r|\r\n)")
         .unwrap()
-        .replace_all(expr, "\n")
+        .replace_all(code, "\n")
         .replace("(", " ( ")
         .replace(")", " ) ")
         .replace("'", " ' ")
@@ -20,8 +20,14 @@ pub fn parse<'a>(tokens: &'a [String]) -> Result<(Exp, &'a [String]), LispErr> {
     match &token[..] {
         "(" => parse_list(rest),
         ")" => Err(LispErr::UnexpectedToken(")".to_string())),
+        "'" => parse_quote(rest),
         _ => Ok((parse_atom(token)?, rest)),
     }
+}
+
+fn parse_quote<'a>(tokens: &'a [String]) -> Result<(Exp, &'a [String]), LispErr> {
+    let (datum, rest) = parse(tokens)?;
+    Ok((Exp::Pair(cons(Exp::Symbol("quote".to_string()), Exp::Pair(cons(datum, Exp::Nil)))), rest))
 }
 
 fn parse_list<'a>(tokens: &'a [String]) -> Result<(Exp, &'a [String]), LispErr> {

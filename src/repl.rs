@@ -4,8 +4,8 @@ use crate::runtime::*;
 use rustyline::error::ReadlineError;
 use rustyline::{Config, EditMode, Editor};
 
-fn parse_eval(expr: String, env: &mut Env) -> Result<Exp, LispErr> {
-    let (parsed_exp, _) = parse(&lex(&expr))?;
+fn parse_eval(code: String, env: &mut Env) -> Result<Exp, LispErr> {
+    let (parsed_exp, _) = parse(&lex(&code))?;
     Ok(eval(env, &parsed_exp)?)
 }
 

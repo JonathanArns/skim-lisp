@@ -1,11 +1,11 @@
 use crate::ast::*;
 use crate::runtime::*;
 use std::rc::Rc;
-use crate::args;
+use crate::destruct;
 
 pub fn prim_plus(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
     let mut res = 0.0;
-    let list = args!(env, args, ""; (->..Exp::Number))?;
+    let list = destruct!(env, args, ""; (->..Exp::Number))?;
     for x in list {
         res += x;
     }
@@ -13,7 +13,7 @@ pub fn prim_plus(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
 }
 
 pub fn prim_minus(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
-    let (arg0, rest) = args!(env, args, ""; (->Exp::Number) (->..Exp::Number))?;
+    let (arg0, rest) = destruct!(env, args, ""; (->Exp::Number) (->..Exp::Number))?;
     let mut res = arg0;
     for x in rest {
         res -= x;
@@ -172,5 +172,6 @@ pub fn prim_list(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
 }
 
 pub fn prim_quote(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
-    todo!()
+    let datum = destruct!(env, args, ""; (Exp))?;
+    Ok(datum)
 }
