@@ -1,4 +1,5 @@
 pub mod repl;
+pub mod run;
 
 pub(crate) mod ast;
 pub(crate) mod parser;

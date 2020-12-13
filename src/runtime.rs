@@ -51,6 +51,7 @@ pub fn default_env() -> Env<'static> {
     env.set("cons".to_string(), Exp::Primitive(prim_cons));
     env.set("list".to_string(), Exp::Primitive(prim_list));
     env.set("quote".to_string(), Exp::Primitive(prim_quote));
+    env.set("display".to_string(), Exp::Primitive(prim_display));
     env
 }
 

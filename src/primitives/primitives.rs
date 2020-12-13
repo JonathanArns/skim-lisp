@@ -175,3 +175,9 @@ pub fn prim_quote(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
     let datum = destruct!(env, args, ""; (Exp))?;
     Ok(datum)
 }
+
+pub fn prim_display(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
+    let arg = destruct!(env, args, ""; (->Exp))?;
+    println!("{}", arg);
+    Ok(Exp::Nil)
+}
