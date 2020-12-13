@@ -3,6 +3,7 @@ use crate::runtime::*;
 use std::rc::Rc;
 use crate::destruct;
 
+#[allow(unused_mut)]
 pub fn prim_plus(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
     let mut res = 0.0;
     let list = destruct!(env, args, ""; (->..Exp::Number))?;
@@ -171,11 +172,13 @@ pub fn prim_list(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
     }
 }
 
-pub fn prim_quote(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
+#[allow(unused_mut)]
+pub fn prim_quote(_: &mut Env, args: Exp) -> Result<Exp, LispErr> {
     let datum = destruct!(env, args, ""; (Exp))?;
     Ok(datum)
 }
 
+#[allow(unused_mut)]
 pub fn prim_display(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
     let arg = destruct!(env, args, ""; (->Exp))?;
     println!("{}", arg);
