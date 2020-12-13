@@ -45,6 +45,7 @@ pub fn default_env() -> Env<'static> {
     env.set("-".to_string(), Exp::Primitive(prim_minus));
     env.set("define".to_string(), Exp::Primitive(prim_define));
     env.set("lambda".to_string(), Exp::Primitive(prim_lambda));
+    env.set("if".to_string(), Exp::Primitive(prim_if));
     env.set("cond".to_string(), Exp::Primitive(prim_cond));
     env.set("car".to_string(), Exp::Primitive(prim_car));
     env.set("cdr".to_string(), Exp::Primitive(prim_cdr));

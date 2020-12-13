@@ -72,6 +72,15 @@ pub fn prim_lambda(_: &mut Env, args: Exp) -> Result<Exp, LispErr> {
     Err(LispErr::Reason("invalid lambda definition".to_string()))
 }
 
+pub fn prim_if(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
+    let (test, then, els) = destruct!(env, args, "if"; (->Exp) (Exp) (Exp))?;
+    if let Exp::Boolean(false) = test {
+        eval(env, &els)
+    } else {
+        eval(env, &then)
+    }
+}
+
 pub fn prim_cond(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
     let num_args_err = Err(LispErr::Reason(
         "Expected exactly 3 arguments to (cond)".to_string(),
