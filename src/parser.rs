@@ -62,19 +62,27 @@ fn parse_atom(token: &str) -> Result<Exp, LispErr> {
     if let Ok(x) = token.parse() {
         // float 64
         Ok(Exp::Number(x))
-    } else if first == '"' {
-        // string
-        let mut string = String::new();
-        for c in iter {
-            if c != '"' || string.ends_with("\"") {
-                string.push(c);
-            } else {
-                return Ok(Exp::String(string));
-            }
+    } else if first == '#' {
+        if token == "#t" {
+            Ok(Exp::Boolean(true))
+        } else if token == "#f" {
+            Ok(Exp::Boolean(false))
+        } else {
+            Err(LispErr::UnexpectedToken(s))
         }
-        Err(LispErr::UnexpectedToken(
-            "Expected \" to finish string literal".to_string(),
-        ))
+    // } else if first == '"' {
+    //     // string
+    //     let mut string = String::new();
+    //     for c in iter {
+    //         if c != '"' || string.ends_with("\"") {
+    //             string.push(c);
+    //         } else {
+    //             return Ok(Exp::String(string));
+    //         }
+    //     }
+    //     Err(LispErr::UnexpectedToken(
+    //         "Expected \" to finish string literal".to_string(),
+    //     ))
     } else {
         Ok(Exp::Symbol(token.to_string()))
     }
