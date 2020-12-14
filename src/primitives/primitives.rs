@@ -119,7 +119,26 @@ pub fn prim_cond(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
         }
     } else {
         num_args_err
+
+pub fn prim_or(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
+    let (left, right) = destruct!(env, args, "or"; (->Exp) (->Exp))?;
+    if let Exp::Boolean(true) = left {
+        Ok(left)
+    } else if let Exp::Boolean(true) = right {
+        Ok(right)
+    } else {
+        Ok(Exp::Boolean(false))
     }
+}
+
+pub fn prim_and(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
+    let (left, right) = destruct!(env, args, "or"; (->Exp) (->Exp))?;
+    if let Exp::Boolean(true) = left {
+        if let Exp::Boolean(true) = right {
+            return Ok(right)
+        }
+    }
+    Ok(Exp::Boolean(false))
 }
 
 pub fn prim_car(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {

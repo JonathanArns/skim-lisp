@@ -47,6 +47,8 @@ pub fn default_env() -> Env<'static> {
     env.set("lambda".to_string(), Exp::Primitive(prim_lambda));
     env.set("if".to_string(), Exp::Primitive(prim_if));
     env.set("cond".to_string(), Exp::Primitive(prim_cond));
+    env.set("or".to_string(), Exp::Primitive(prim_or));
+    env.set("and".to_string(), Exp::Primitive(prim_and));
     env.set("car".to_string(), Exp::Primitive(prim_car));
     env.set("cdr".to_string(), Exp::Primitive(prim_cdr));
     env.set("cons".to_string(), Exp::Primitive(prim_cons));
