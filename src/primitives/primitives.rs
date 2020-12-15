@@ -81,64 +81,54 @@ pub fn prim_if(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
     }
 }
 
+#[allow(unused_mut)]
 pub fn prim_cond(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
-    let num_args_err = Err(LispErr::Reason(
-        "Expected exactly 3 arguments to (cond)".to_string(),
-    ));
-    if let Exp::Pair(list) = args {
-        let mut clause_iter = list.into_iter();
-        let x = loop {
-            match clause_iter.next() {
-                Some(Exp::Pair(clause)) => {
-                    todo!()
-                },
-                None => break Ok(Exp::Nil),
-                _ => break Err(LispErr::Reason("(cond) only takes lists as arguments".to_string())),
+    let branches = destruct!(env, args, "cond"; (..Exp))?;
+    for branch in branches {
+        let (car, cdr) = destruct!(env, branch, "cond"; (Exp) (..Exp))?;
+        if let Exp::Symbol(ref s) = car {
+            if s == "else" {
+                if cdr.len() == 0 {
+                    return Err(LispErr::Reason("(cond) got an else branch with 0 expressions, expected at least 1".to_string()))
+                }
+                let mut result = Exp::Nil;
+                for body in cdr {
+                    result = eval(env, &body)?;
+                }
+                return Ok(result)
             }
-        };
-        ///////////////
-        let condition = if let Some(cond) = clause_iter.next() {
-            cond
-        } else {
-            return num_args_err;
-        };
-        let true_branch = if let Some(branch) = clause_iter.next() {
-            branch
-        } else {
-            return num_args_err;
-        };
-        let false_branch = if let Some(branch) = clause_iter.next() {
-            branch
-        } else {
-            return num_args_err;
-        };
-
-        match eval(env, &condition)? {
-            Exp::Boolean(false) | Exp::Nil => eval(env, &false_branch),
-            _ => eval(env, &true_branch),
         }
-    } else {
-        num_args_err
-
-pub fn prim_or(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
-    let (left, right) = destruct!(env, args, "or"; (->Exp) (->Exp))?;
-    if let Exp::Boolean(true) = left {
-        Ok(left)
-    } else if let Exp::Boolean(true) = right {
-        Ok(right)
-    } else {
-        Ok(Exp::Boolean(false))
+        if let Exp::Boolean(false) = eval(env, &car)? {} else {
+            let mut result = Exp::Nil;
+            for body in cdr {
+                result = eval(env, &body)?;
+            }
+            return Ok(result)
+        }
     }
+    Ok(Exp::Nil)
 }
 
-pub fn prim_and(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
-    let (left, right) = destruct!(env, args, "or"; (->Exp) (->Exp))?;
-    if let Exp::Boolean(true) = left {
-        if let Exp::Boolean(true) = right {
-            return Ok(right)
+#[allow(unused_mut)]
+pub fn prim_or(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
+    let exps = destruct!(env, args, "or"; (->..Exp))?;
+    for e in exps {
+        if let Exp::Boolean(false) = e {} else {
+            return Ok(Exp::Boolean(true))
         }
     }
     Ok(Exp::Boolean(false))
+}
+
+#[allow(unused_mut)]
+pub fn prim_and(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
+    let exps = destruct!(env, args, "and"; (->..Exp))?;
+    for e in exps {
+        if let Exp::Boolean(false) = e {
+            return Ok(Exp::Boolean(false))
+        }
+    }
+    Ok(Exp::Boolean(true))
 }
 
 pub fn prim_car(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
