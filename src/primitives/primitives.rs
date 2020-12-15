@@ -131,55 +131,21 @@ pub fn prim_and(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
     Ok(Exp::Boolean(true))
 }
 
+#[allow(unused_mut)]
 pub fn prim_car(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
-    let arg_err = Err(LispErr::Reason("Expected exactly one argument of type list to (car)".to_string()));
-    if let Exp::Pair(LispCell {car, cdr}) = args {
-        if let (Exp::Pair(LispCell {car, ..}), Exp::Nil) = (eval(env, &*car)?, *cdr) {
-            Ok(*car)
-        } else {
-            arg_err
-        }
-    } else {
-        arg_err
-    }
+    let pair = destruct!(env, args, "car"; (->Exp::Pair))?;
+    eval(env, pair.car.as_ref())
 }
 
+#[allow(unused_mut)]
 pub fn prim_cdr(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
-    let arg_err = Err(LispErr::Reason("Expected exactly one argument of type list to (cdr)".to_string()));
-    if let Exp::Pair(LispCell {car, cdr}) = args {
-        if let (Exp::Pair(LispCell {cdr, ..}), Exp::Nil) = (eval(env, &*car)?, *cdr) {
-            Ok(*cdr)
-        } else {
-            arg_err
-        }
-    } else {
-        arg_err
-    }
+    let pair = destruct!(env, args, "cdr"; (->Exp::Pair))?;
+    eval(env, pair.cdr.as_ref())
 }
 
 pub fn prim_cons(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
-    let num_args_err = Err(LispErr::Reason(
-        "Expected exactly 2 arguments to (cons)".to_string(),
-    ));
-    if let Exp::Pair(list) = args {
-        let mut iter = eval_list(env, list)?.into_iter();
-        let car = if let Some(car) = iter.next() {
-            car
-        } else {
-            return num_args_err;
-        };
-        let cdr = if let Some(cdr) = iter.next() {
-            cdr
-        } else {
-            return num_args_err;
-        };
-        if let Some(_) = iter.next() {
-            return num_args_err;
-        }
-        Ok(Exp::Pair(cons(car, cdr)))
-    } else {
-        num_args_err
-    }
+    let (car, cdr) = destruct!(env, args, "cons"; (->Exp) (->Exp))?;
+    Ok(Exp::Pair(cons(car, cdr)))
 }
 
 pub fn prim_list(env: &mut Env, args: Exp) -> Result<Exp, LispErr> {
