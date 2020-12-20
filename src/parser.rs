@@ -1,4 +1,5 @@
 use crate::ast::*;
+use crate::Exception::*;
 use regex::Regex;
 
 pub fn lex(code: &str) -> Vec<String> {
@@ -13,37 +14,37 @@ pub fn lex(code: &str) -> Vec<String> {
         .collect()
 }
 
-pub fn parse<'a>(tokens: &'a [String]) -> Result<(Exp, &'a [String]), LispErr> {
+pub fn parse<'a>(tokens: &'a [String]) -> Result<(Exp, &'a [String]), Exn> {
     let (token, rest) = tokens
         .split_first()
-        .ok_or(LispErr::Reason("Could not get next token".to_string()))?;
+        .ok_or(Exn::other_unknown("Could not get next token"))?;
     match &token[..] {
         "(" => parse_list(rest),
-        ")" => Err(LispErr::UnexpectedToken(")".to_string())),
+        ")" => Err(Exn::syntax_unknown("Found unexpected \")\"")),
         "'" => parse_quote(rest),
         _ => Ok((parse_atom(token)?, rest)),
     }
 }
 
-fn parse_quote<'a>(tokens: &'a [String]) -> Result<(Exp, &'a [String]), LispErr> {
+fn parse_quote<'a>(tokens: &'a [String]) -> Result<(Exp, &'a [String]), Exn> {
     let (datum, rest) = parse(tokens)?;
     Ok((Exp::Pair(cons(Exp::Symbol("quote".to_string()), Exp::Pair(cons(datum, Exp::Nil)))), rest))
 }
 
-fn parse_list<'a>(tokens: &'a [String]) -> Result<(Exp, &'a [String]), LispErr> {
+fn parse_list<'a>(tokens: &'a [String]) -> Result<(Exp, &'a [String]), Exn> {
     let mut list = cons(Exp::Nil, Exp::Nil);
     let mut toks = tokens;
     loop {
         let (next, rest) = toks
             .split_first()
-            .ok_or(LispErr::Reason("Could not get next token".to_string()))?;
+            .ok_or(Exn::other_unknown("Could not get next token"))?;
         if next == ")" {
             if let (&Exp::Nil, &Exp::Nil) = (&*list.car, &*list.cdr) {
                 return Ok((Exp::Pair(list), rest));
             } else if let Exp::Pair(res) = *list.cdr {
                 return Ok((Exp::Pair(res), rest));
             } else {
-                return Err(LispErr::Bug("Failed to parse list".to_string()));
+                return Err(Exn::syntax_unknown("Could not parse list"));
             }
         }
         let (exp, new_toks) = parse(toks)?;
@@ -52,13 +53,10 @@ fn parse_list<'a>(tokens: &'a [String]) -> Result<(Exp, &'a [String]), LispErr> 
     }
 }
 
-fn parse_atom(token: &str) -> Result<Exp, LispErr> {
+fn parse_atom(token: &str) -> Result<Exp, Exn> {
     let s = token.to_string();
     let mut iter = s.chars();
-    let first = iter.next().ok_or(LispErr::Bug(format!(
-        "Could not read first char when parsing atom: {}",
-        token
-    )))?;
+    let first = iter.next().ok_or(Exn::other_unknown(&format!("Could not get first char of token {}", token)))?;
     if let Ok(x) = token.parse() {
         // float 64
         Ok(Exp::Number(x))
@@ -68,7 +66,7 @@ fn parse_atom(token: &str) -> Result<Exp, LispErr> {
         } else if token == "#f" {
             Ok(Exp::Boolean(false))
         } else {
-            Err(LispErr::UnexpectedToken(s))
+            Err(Exn::syntax_unknown(&format!("Unexpected token: {}", token)))
         }
     // } else if first == '"' {
     //     // string

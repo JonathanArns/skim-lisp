@@ -1,4 +1,4 @@
-use crate::ast::*;
+use crate::Exception::*;
 use crate::parser::*;
 use crate::runtime::*;
 use std::fs;
@@ -7,14 +7,11 @@ pub fn run(file_name: &str) {
     let mut env = default_env();
     match exec_file(&mut env, file_name) {
         Ok(()) => {},
-        Err(e) => match e {
-            LispErr::UnexpectedToken(msg) | LispErr::Reason(msg) => println!("{}", msg),
-            LispErr::Bug(msg) => println!("Bug! {}", msg),
-        }
+        Err(e) => println!("{}", e)
     }
 }
 
-pub(crate) fn exec_file(env: &mut Env, file_name: &str) -> Result<(), LispErr> {
+pub(crate) fn exec_file(env: &mut Env, file_name: &str) -> Result<(), Exn> {
     let code = fs::read_to_string(file_name).expect(&format!("Could not read file: {}", file_name));
     let tokens = lex(&code);
     let mut exp_and_rest = parse(&tokens)?;

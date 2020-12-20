@@ -75,14 +75,14 @@ macro_rules! destruct {
     (@arg($env:ident, $list:ident) (..$pat:path)) => { // (..Exp::Pair)
         {
             let mut vec = Vec::new();
-            if let $pat(x) = e {
+            if let $pat(x) = *$list.car {
                 vec.push(x);
             } else {
                 todo!()
             }
             while let Exp::Pair(cdr) = *$list.cdr {
                 $list = cdr;
-                if let $pat(x) = e {
+                if let $pat(x) = *$list.car {
                     vec.push(x);
                 } else {
                     todo!()
@@ -117,7 +117,7 @@ macro_rules! destruct {
                         list = if let Exp::Pair(cdr) = *list.cdr {
                             Ok(cdr)
                         } else {
-                            Err(LispErr::Reason(format!("Expected {} arguments and got {}", expected_args, received_args)))
+                            Err(Exn::arity_unknown($err, expected_args, received_args))
                         }?;
                         destruct!(@arg($env, list) $arg)
                     }
@@ -129,12 +129,12 @@ macro_rules! destruct {
                     list = cdr;
                     received_args += 1;
                 }
-                Err(LispErr::Reason(format!("Expected {} arguments and got {}", expected_args, received_args)))
+                Err(Exn::arity_unknown($err, expected_args, received_args))
             } else { // got too many arguments
                 Ok(result)
             }
         } else {
-            Err(LispErr::Reason("primitive procedure did not receive a list as input".to_string()))
+            Err(Exn::other_unknown("primitive did note receive a list as input"))
         }
     };
 }

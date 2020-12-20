@@ -1,10 +1,11 @@
 use crate::ast::*;
+use crate::Exception::*;
 use crate::parser::*;
 use crate::runtime::*;
 use rustyline::error::ReadlineError;
 use rustyline::{Config, EditMode, Editor};
 
-fn parse_eval(code: String, env: &mut Env) -> Result<Exp, LispErr> {
+fn parse_eval(code: String, env: &mut Env) -> Result<Exp, Exn> {
     let (parsed_exp, _) = parse(&lex(&code))?;
     Ok(eval(env, &parsed_exp)?)
 }
@@ -23,10 +24,7 @@ pub fn repl() {
                 rl.add_history_entry(line.as_str());
                 match parse_eval(line, &mut env) {
                     Ok(res) => println!("{}", res),
-                    Err(e) => match e {
-                        LispErr::UnexpectedToken(msg) | LispErr::Reason(msg) => println!("{}", msg),
-                        LispErr::Bug(msg) => println!("Bug! {}", msg),
-                    },
+                    Err(e) => println!("{}", e)
                 }
             }
             Err(ReadlineError::Interrupted) => {

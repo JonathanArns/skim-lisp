@@ -1,4 +1,5 @@
 use crate::runtime::Env;
+use crate::Exception::*;
 use std::fmt::Display;
 use std::rc::Rc;
 
@@ -9,25 +10,12 @@ pub struct LispCell {
 }
 
 #[derive(Clone)]
-pub struct Function<'a> {
-    params: Box<Exp>,
-    body: Box<Exp>,
-    env: Box<Env<'a>>,
-}
-
-#[derive(Clone)]
 pub struct Lambda {
-    pub params: Rc<Exp>,
+    pub params: Rc<Vec<String>>,
     pub body: Rc<Exp>,
 }
 
-pub enum LispErr {
-    Reason(String),
-    Bug(String),
-    UnexpectedToken(String),
-}
-
-pub type Primitive = fn(env: &mut Env, params: Exp) -> Result<Exp, LispErr>;
+pub type Primitive = fn(env: &mut Env, params: Exp) -> Result<Exp, Exn>;
 
 #[derive(Clone)]
 pub enum Exp {
@@ -55,7 +43,7 @@ impl LispCell {
         self.cdr = Box::new(exp);
     }
 
-    pub fn append(&mut self, exp: Exp) -> Result<(), LispErr> {
+    pub fn append(&mut self, exp: Exp) -> Result<(), Exn> {
         let mut cell = self;
         loop {
             if let Exp::Nil = *cell.cdr {
@@ -65,9 +53,7 @@ impl LispCell {
             if let Exp::Pair(ref mut x) = &mut *cell.cdr {
                 cell = x;
             } else {
-                return Err(LispErr::Reason(
-                    "Tried to append to an unproper list".to_string(),
-                ));
+                return Err(Exn::other_unknown("tried to append to an unproper list"));
             }
         }
     }
@@ -156,6 +142,21 @@ impl Exp {
             }
             Exp::String(s) => s.to_string(),
         }
+    }
+
+    pub fn type_name(&self) -> String {
+        match self {
+            Exp::Nil => "()",
+            Exp::Number(_) => "number",
+            Exp::Symbol(_) => "symbol",
+            Exp::Primitive(_) => "primitive function",
+            Exp::Pair(_) => "pair",
+            Exp::Lambda(_) => "lambda function",
+            Exp::Boolean(_) => "boolean",
+            Exp::Char(_) => "char",
+            Exp::Vector(_) => "vector",
+            Exp::String(_) => "string",
+        }.to_string()
     }
 }
 

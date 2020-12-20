@@ -1,4 +1,5 @@
 use crate::ast::*;
+use crate::Exception::*;
 use crate::primitives::*;
 use std::collections::HashMap;
 
@@ -58,7 +59,7 @@ pub fn default_env() -> Env<'static> {
     env
 }
 
-pub fn eval<'a>(env: &'a mut Env, exp: &Exp) -> Result<Exp, LispErr> {
+pub fn eval<'a>(env: &'a mut Env, exp: &Exp) -> Result<Exp, Exn> {
     match exp {
         Exp::Pair(x) => {
             if let (Exp::Nil, Exp::Nil) = (&*x.car, &*x.cdr) {
@@ -67,7 +68,7 @@ pub fn eval<'a>(env: &'a mut Env, exp: &Exp) -> Result<Exp, LispErr> {
                 apply_function(env, x.clone())
             }
         }
-        Exp::Symbol(s) => lookup_symbol(env, &s),
+        Exp::Symbol(s) => lookup_symbol(env, &s).ok_or(Exn::other_unknown("tried to look up undefined symbol")),
         Exp::Nil
         | Exp::Number(_)
         | Exp::Lambda(_)
@@ -79,50 +80,37 @@ pub fn eval<'a>(env: &'a mut Env, exp: &Exp) -> Result<Exp, LispErr> {
     }
 }
 
-fn apply_function(env: &mut Env, list: LispCell) -> Result<Exp, LispErr> {
+fn apply_function(env: &mut Env, list: LispCell) -> Result<Exp, Exn> {
     match eval(env, &*list.car)? {
         Exp::Primitive(prim) => prim(env, *list.cdr),
         Exp::Lambda(lambda) => {
-            let mut scope = if let Exp::Pair(param_names) = lambda.params.as_ref() {
-                let mut args_iter = if let Exp::Pair(args) = *list.cdr {
-                    eval_list(env, args)?.into_iter()
-                } else {
-                    ListIter { list: None }
-                };
-                let mut scope = env.new_scope();
-                // TODO: this might violate function call semantics
-                // in terms of calling with too few or too many arguments
-                for param in param_names.clone().into_iter() {
-                    if let Exp::Symbol(sym) = param {
-                        if let Some(arg) = args_iter.next() {
-                            scope.set(sym, arg);
-                        } else {
-                            return Err(LispErr::Reason(format!(
-                                "Function {} called with too few arguments",
-                                list.car
-                            )));
-                        }
-                    }
-                }
-                if let Some(_) = args_iter.next() {
-                    return Err(LispErr::Reason(format!(
-                        "Function {} called with too many arguments",
-                        list.car
-                    )));
-                }
-                scope
+            let mut args_iter = if let Exp::Pair(args) = *list.cdr {
+                eval_list(env, args)?.into_iter()
             } else {
-                return Err(LispErr::Bug(
-                    "Lambda does not have a params list".to_string(),
-                ));
+                ListIter { list: None }
             };
+            let mut scope = env.new_scope();
+            // TODO: this might violate function call semantics
+            // in terms of calling with too few or too many arguments
+            let mut num_args_found = 0;
+            for param in lambda.params.as_ref() {
+                if let Some(arg) = args_iter.next() {
+                    scope.set(param.clone(), arg);
+                    num_args_found += 1;
+                } else {
+                    return Err(Exn::arity_unknown("anonymous", lambda.params.len(), num_args_found));
+                }
+            }
+            if let Some(_) = args_iter.next() {
+                return Err(Exn::arity_unknown("anonymous", lambda.params.len(), num_args_found));
+            }
             eval(&mut scope, lambda.body.as_ref())
         }
-        x => Err(LispErr::Reason(format!("{} is not a callable function", x))),
+        x => Err(Exn::typ_unknown("anonymous", "procedure", &x.type_name())),
     }
 }
 
-pub fn eval_list(env: &mut Env, list: LispCell) -> Result<LispCell, LispErr> {
+pub fn eval_list(env: &mut Env, list: LispCell) -> Result<LispCell, Exn> {
     let mut res = list;
     let mut rest = &mut res;
     loop {
@@ -136,9 +124,6 @@ pub fn eval_list(env: &mut Env, list: LispCell) -> Result<LispCell, LispErr> {
     Ok(res)
 }
 
-fn lookup_symbol<'a>(env: &'a Env, sym: &str) -> Result<Exp, LispErr> {
-    Ok(env
-        .get(sym)
-        .ok_or(LispErr::Reason(format!("undefined symbol: {}", sym)))?
-        .clone())
+fn lookup_symbol<'a>(env: &'a Env, sym: &str) -> Option<Exp> {
+    env.get(sym).cloned()
 }
