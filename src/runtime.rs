@@ -1,5 +1,5 @@
 use crate::ast::*;
-use crate::primitives::primitives::*;
+use crate::primitives::*;
 use std::collections::HashMap;
 
 #[derive(Clone)]

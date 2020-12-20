@@ -1,2 +1,8 @@
+#[macro_use]
 mod util;
-pub(crate) mod primitives;
+
+mod primitives;
+pub use primitives::*;
+
+mod math;
+pub use math::*;

@@ -1,4 +1,25 @@
-#[macro_export]
+/// # destruct!
+/// Destructure a list and match individual arguments (for use in primitve functions).
+///
+/// `destruct!(env, args, "prim_name"; (Exp) (Exp::Number) (->Exp) ...)`
+///
+/// `env`, `args` and `"prim_name"` are required arguments, always followed by a semicolon and a list
+/// of 0 or more argument matchers. The returned Tuple has a field with the contained value for each specified matcher.
+///
+/// ### Matchers and their return types
+///
+/// `(Exp)` -> `Exp`
+///
+/// `(Exp::Number)` -> `f64`
+///
+/// `(Exp::Pair)` -> `LispCell`
+///
+/// This works for any variant of the `Exp` Enum.
+///
+/// Prefix with `..` like `(..Exp)` or `(..Exp::Boolean)` to match 0 or more arguments until the end of the argument list.
+/// This should only be used in the last matcher.
+///
+/// Prefix with `->` like `(->Exp::Pair)` or `(->..Exp)` to evaluate arguments before matching.
 macro_rules! destruct {
     (@void $tt:tt) => {};
     (@type_name Exp::Number) => { "number" };
