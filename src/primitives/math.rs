@@ -1,9 +1,9 @@
 use crate::ast::*;
-use crate::Exception::*;
 use crate::runtime::*;
+use crate::Exception::*;
 
 #[allow(unused_mut)]
-pub fn prim_plus(env: &mut Env, args: Exp) -> Result<Exp, Exn> {
+pub fn prim_plus(env: &mut Env, args: Item) -> Result<Exp, Exn> {
     let mut res = 0.0;
     let list = destruct!(env, args, ""; (->..Exp::Number))?;
     for x in list {
@@ -12,7 +12,7 @@ pub fn prim_plus(env: &mut Env, args: Exp) -> Result<Exp, Exn> {
     Ok(Exp::Number(res))
 }
 
-pub fn prim_minus(env: &mut Env, args: Exp) -> Result<Exp, Exn> {
+pub fn prim_minus(env: &mut Env, args: Item) -> Result<Exp, Exn> {
     let (arg0, rest) = destruct!(env, args, ""; (->Exp::Number) (->..Exp::Number))?;
     let mut res = arg0;
     for x in rest {

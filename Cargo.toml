@@ -12,5 +12,4 @@ path = "src/lib.rs"
 
 [dependencies]
 clap = "*"
-regex = "*"
 rustyline = "6"

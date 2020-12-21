@@ -1,13 +1,13 @@
-use crate::Exception::*;
 use crate::parser::*;
 use crate::runtime::*;
+use crate::Exception::*;
 use std::fs;
 
 pub fn run(file_name: &str) {
     let mut env = default_env();
     match exec_file(&mut env, file_name) {
-        Ok(()) => {},
-        Err(e) => println!("{}", e)
+        Ok(()) => {}
+        Err(e) => println!("{}", e),
     }
 }
 
@@ -18,7 +18,7 @@ pub(crate) fn exec_file(env: &mut Env, file_name: &str) -> Result<(), Exn> {
     loop {
         eval(env, &exp_and_rest.0)?;
         if exp_and_rest.1.len() == 0 {
-            return Ok(())
+            return Ok(());
         }
         exp_and_rest = parse(exp_and_rest.1)?;
     }
