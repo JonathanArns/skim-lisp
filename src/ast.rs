@@ -15,7 +15,7 @@ pub struct Lambda {
     pub body: Rc<Item>,
 }
 
-pub type Primitive = fn(env: &mut Env, params: Item) -> Result<Exp, Exn>;
+pub type Primitive = fn(env: &mut Env, meta: Meta, params: Item) -> Result<Item, Exn>;
 
 #[derive(Clone)]
 pub enum Exp {
@@ -74,16 +74,16 @@ impl LispCell {
         loop {
             if let Exp::Nil = cell.cdr.exp {
                 cell.set_cdr(Item::cons(
-                    cell.cdr.meta,
+                    cell.cdr.meta.clone(),
                     item,
-                    Item::new(cell.cdr.meta, Exp::Nil),
+                    Item::new(cell.cdr.meta.clone(), Exp::Nil),
                 ));
                 return Ok(());
             }
             if let Exp::Pair(ref mut x) = cell.cdr.exp {
                 cell = x;
             } else {
-                return Err(Exn::other_unknown("tried to append to an unproper list"));
+                return Err(Exn::other(item.meta, "tried to append to an unproper list"));
             }
         }
     }

@@ -1,85 +1,129 @@
 use std::fmt::Display;
 
-#[derive(Clone, Copy)]
+
+#[derive(Clone)]
 pub struct Meta {
-    pub location: usize,
+    pub line: usize,
+    pub position: usize,
+    pub token_length: usize,
+    pub file_name: Option<String>,
+    pub code: String,
 }
 
+#[derive(Clone)]
+pub enum Arity {
+    Exact(usize),
+    AtLeast(usize),
+}
+
+#[derive(Clone)]
 pub enum Condition {
     Syntax(String),
-    Arity(String, usize, usize),
-    Type(String, String, String),
+    Arity(Arity, usize),
+    Type(String, String),
     Other(String), // TODO: replace this with meaningful variants
 }
 
 pub struct Exn {
-    meta: Option<Meta>,
+    meta: Meta,
     condition: Condition,
 }
 
 impl Meta {
-    pub fn new(loc: usize) -> Meta {
-        Meta { location: loc }
+    pub fn new(line: usize, pos: usize, length: usize, file: Option<String>, code: String) -> Meta {
+        Meta {
+            line: line,
+            position: pos,
+            token_length: length,
+            file_name: file,
+            code: code,
+        }
+    }
+
+    pub fn empty() -> Meta {
+        Meta {
+            line: 0,
+            position: 0,
+            token_length: 0,
+            file_name: None,
+            code: "".to_owned(),
+        }
     }
 }
 
 impl Exn {
     pub fn new(meta: Meta, cond: Condition) -> Exn {
         Exn {
-            meta: Some(meta),
-            condition: cond,
-        }
-    }
-    pub fn new_unknown(cond: Condition) -> Exn {
-        Exn {
-            meta: None,
+            meta: meta,
             condition: cond,
         }
     }
 
-    pub fn syntax_unknown(msg: &str) -> Exn {
-        Exn::new_unknown(Condition::Syntax(msg.to_string()))
+    pub fn syntax(meta: Meta, msg: &str) -> Exn {
+        Exn::new(meta, Condition::Syntax(msg.to_string()))
     }
 
-    pub fn arity(loc: Meta, name: &str, expected: usize, found: usize) -> Exn {
-        Exn::new(loc, Condition::Arity(name.to_string(), expected, found))
-    }
-
-    pub fn arity_unknown(name: &str, expected: usize, found: usize) -> Exn {
-        Exn::new_unknown(Condition::Arity(name.to_string(), expected, found))
-    }
-
-    pub fn typ(loc: Meta, name: &str, expected: &str, found: &str) -> Exn {
+    pub fn arity(meta: Meta, expected: usize, found: usize) -> Exn {
         Exn::new(
-            loc,
-            Condition::Type(name.to_string(), expected.to_string(), found.to_string()),
+            meta,
+            Condition::Arity(Arity::Exact(expected), found),
         )
     }
 
-    pub fn typ_unknown(name: &str, expected: &str, found: &str) -> Exn {
-        Exn::new_unknown(Condition::Type(
-            name.to_string(),
-            expected.to_string(),
-            found.to_string(),
-        ))
+    pub fn typ(meta: Meta, expected: &str, found: &str) -> Exn {
+        Exn::new(
+            meta,
+            Condition::Type(expected.to_string(), found.to_string()),
+        )
     }
 
-    pub fn other_unknown(msg: &str) -> Exn {
-        Exn::new_unknown(Condition::Other(msg.to_string()))
+    pub fn other(meta: Meta, msg: &str) -> Exn {
+        Exn::new(meta, Condition::Other(msg.to_string()))
     }
 }
 
 impl Display for Exn {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        let s = if let Some(meta) = self.meta {
-            format!(
-                "--------------------------------------\n   Exception occurred at {}",
-                meta.location
-            )
-        } else {
-            "--------------------------------------\n   Exception occured at unknown location"
-                .to_string()
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        let (title, msg) = match self.condition.clone() {
+            Condition::Arity(expected, found) => (
+                "wrong number of arguments",
+                match expected {
+                    Arity::Exact(a) => format!("expected {} arguments, found {}", a, found),
+                    Arity::AtLeast(a) => format!("expected at least {} arguments, found {}", a, found),
+                },
+            ),
+            Condition::Syntax(msg) => ("wrong syntax", msg),
+            Condition::Type(found, expected) => (
+                "mismatched types",
+                format!("expected {}, found {}", expected, found),
+            ),
+            Condition::Other(msg) => ("unknown", msg),
         };
-        write!(f, "{}", s)
+        let mut file = true;
+        let mut space = String::new();
+        let header = if let Some(file_name) = self.meta.file_name.clone() {
+            for _ in 0..self.meta.line.to_string().len() {
+                space.push(' ');
+            }
+            let location = format!("{}:{}:{}", file_name, self.meta.line, self.meta.position);
+            format!("exception: {}\n{}--> {}", title, space, location)
+        } else {
+            file = false;
+            format!("exception: {}", title)
+        };
+        let body = if file {
+            let mut body = format!("{} |\n{} | {}\n{} |", space, self.meta.line, self.meta.code, space);
+            let mut pointer = String::new();
+            for _ in 0..self.meta.position { pointer.push(' '); }
+            for _ in 0..self.meta.token_length { pointer.push('^'); }
+            pointer.push(' ');
+            pointer.push_str(&msg);
+            pointer.push('\n');
+            body.push_str(&pointer);
+            body
+        } else {
+            todo!()
+        };
+        write!(f, "{}\n{}", header, body)
     }
 }

@@ -119,7 +119,7 @@ macro_rules! destruct {
             todo!()
         }
     };
-    ($env:ident, $ex:expr, $err:literal; $first:tt $($arg:tt)*) => {
+    ($env:ident, $ex:expr, $meta:expr; $first:tt $($arg:tt)*) => {
         if let Exp::Pair(mut list) = $ex.exp {
             let (mut expected_args, mut received_args) = (1, 1);
             $(destruct!(@void $arg); expected_args += 1usize;)* // count expected number of arguments
@@ -127,11 +127,11 @@ macro_rules! destruct {
                 destruct!(@arg($env, list) $first)
                 $(
                     ,{
-                        received_args += 1usize;
                         list = if let Exp::Pair(cdr) = list.cdr.exp {
+                            received_args += 1usize;
                             Ok(cdr)
                         } else {
-                            Err(Exn::arity($ex.meta, $err, expected_args, received_args))
+                            Err(Exn::arity($meta.clone(), expected_args, received_args)) // got too few arguments
                         }?;
                         destruct!(@arg($env, list) $arg)
                     }
@@ -143,12 +143,12 @@ macro_rules! destruct {
                     list = cdr;
                     received_args += 1;
                 }
-                Err(Exn::arity($ex.meta, $err, expected_args, received_args))
-            } else { // got too many arguments
+                Err(Exn::arity($meta.clone(), expected_args, received_args)) // got too many arguments
+            } else {
                 Ok(result)
             }
         } else {
-            Err(Exn::other_unknown("primitive did note receive a list as input"))
+            Err(Exn::other($ex.meta.clone(), "primitive did note receive a list as input"))
         }
     };
 }

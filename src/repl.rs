@@ -6,7 +6,7 @@ use rustyline::error::ReadlineError;
 use rustyline::{Config, EditMode, Editor};
 
 fn parse_eval(code: String, env: &mut Env) -> Result<Item, Exn> {
-    let (parsed_exp, _) = parse(&lex(&code))?;
+    let (parsed_exp, _) = parse(&lex(&code, None))?;
     Ok(eval(env, &parsed_exp)?)
 }
 
